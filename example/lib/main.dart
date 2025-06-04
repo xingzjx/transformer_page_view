@@ -1,121 +1,85 @@
 import 'package:flutter/material.dart';
 
-// import 'package:example/buildin_transformers.dart';
-import 'package:flutter/material.dart';
-
-// import 'package:transformer_page_view/transformer_page_view.dart';
-
-import 'package:flutter/cupertino.dart';
-import 'package:transformer_page_view/transformer_page_view.dart';
-
-// 1111111 !!!!!!
-
-void main() => runApp(new MyApp());
-List<Color> list = [Colors.yellow, Colors.green, Colors.blue];
-
-List<String> images = [
-  "assets/Hepburn2.jpg",
-  "assets/Hepburn5.jpg",
-  "assets/Hepburn4.jpg",
-];
+void main() {
+  runApp(MyApp());
+}
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return new MaterialApp(
-      title: 'Flutter Demo',
-      theme: new ThemeData(primarySwatch: Colors.blue),
-      home: new MyHomePage(title: 'Flutter Demo Home Page'),
+    return MaterialApp(
+      home: Scaffold(
+        appBar: AppBar(title: Text('PageView Stack Effect')),
+        body: StackedPageView(),
+      ),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  MyHomePage({required this.title});
-
-  final String title;
-
+class StackedPageView extends StatefulWidget {
   @override
-  _MyHomePageState createState() => new _MyHomePageState();
+  _StackedPageViewState createState() => _StackedPageViewState();
 }
 
-class TestWidget extends StatelessWidget {
+class _StackedPageViewState extends State<StackedPageView>
+    with SingleTickerProviderStateMixin {
+  late PageController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = PageController();
+  }
+
   @override
   Widget build(BuildContext context) {
-    List<Color> list = [
-      Colors.redAccent,
-      Colors.blueAccent,
-      Colors.greenAccent,
-    ];
-    return TransformerPageView(
-      loop: true,
-      transformer: new ScaleAndFadeTransformer(),
-      viewportFraction: 0.8,
-      itemBuilder: (BuildContext context, int index) {
-        return new Container(
-          color: list[index % list.length],
-          child: new Center(
-            child: new Text(
-              "$index",
-              style: new TextStyle(fontSize: 80.0, color: Colors.white),
-            ),
-          ),
-        );
-      },
-      itemCount: 3,
-      key: Key('test'),
-      index: 0,
-      duration: Duration(),
-      physics: QuickerScrollPhysics(),
-      onPageChanged: (int value) {},
-      controller: IndexController(),
-      pageController: TransformerPageController(itemCount: 3),
+    return Container(
+      height: 300,
+      child: PageView.builder(
+        controller: _controller,
+        itemCount: 10, // 假设有10张图片
+        itemBuilder: (context, index) {
+          return Stack(
+            children: <Widget>[
+              // 前一张图片（偏移显示）
+              if (index > 0)
+                Positioned(
+                  left: -0.3 * MediaQuery.of(context).size.width,
+                  child: Opacity(
+                    opacity: 0.5,
+                    child: Image.network(
+                      'https://picsum.photos/400/600?random=$index',
+                      fit: BoxFit.fill,
+                    ),
+                  ),
+                ),
+              // // 后一张图片（偏移显示）
+              if (index < 9)
+                Positioned(
+                  right: -0.3 * MediaQuery.of(context).size.width,
+                  child: Opacity(
+                    opacity: 0.5,
+                    child: Image.network(
+                      'https://picsum.photos/400/600?random=${index + 2}',
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+
+              // 当前图片
+              Align(
+                alignment: Alignment.center,
+                child: Image.network(
+                'https://picsum.photos/400/600?random=${index + 1}',
+                fit: BoxFit.fill,
+              ),),
+            ],
+          );
+        },
+        onPageChanged: (int index) {
+          // 可以在这里添加动画效果
+        },
+      ),
     );
   }
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  @override
-  Widget build(BuildContext context) {
-    return new Scaffold(body: new TestWidget());
-  }
-}
-
-class ScaleAndFadeTransformer extends PageTransformer {
-  final double _scale;
-  final double _fade;
-
-  ScaleAndFadeTransformer({double fade = 0.3, double scale = 0.8})
-    : _fade = fade,
-      _scale = scale;
-
-  @override
-  Widget transform(Widget item, TransformInfo info) {
-    double position = info.position;
-    double scaleFactor = (1 - position.abs()) * (1 - _scale);
-    double fadeFactor = (1 - position.abs()) * (1 - _fade);
-    double opacity = _fade + fadeFactor;
-    double scale = _scale + scaleFactor;
-    return new Opacity(
-      opacity: opacity,
-      child: new Transform.scale(scale: scale, child: item),
-    );
-  }
-}
-
-class QuickerScrollPhysics extends BouncingScrollPhysics {
-  const QuickerScrollPhysics({ScrollPhysics? parent}) : super(parent: parent);
-
-  @override
-  QuickerScrollPhysics applyTo(ScrollPhysics? ancestor) {
-    return QuickerScrollPhysics(parent: buildParent(ancestor));
-  }
-
-  @override
-  SpringDescription get spring => SpringDescription.withDampingRatio(
-    mass: 0.2,
-    stiffness: 300.0,
-    ratio: 1.1,
-  );
 }
